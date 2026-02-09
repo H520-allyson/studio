@@ -1,4 +1,3 @@
-
 import Image from "next/image";
 import Link from "next/link";
 import { Navbar } from "@/components/layout/Navbar";
@@ -45,15 +44,21 @@ export default function Home() {
               </div>
             </div>
             
-            <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-white/10 group">
-              <Image 
-                src={heroImg?.imageUrl || ""} 
-                alt={heroImg?.description || ""}
-                width={1200}
-                height={600}
-                className="object-cover transition-transform duration-700 group-hover:scale-105"
-                data-ai-hint={heroImg?.imageHint}
-              />
+            <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-white/10 group bg-muted/20">
+              {heroImg?.imageUrl ? (
+                <Image 
+                  src={heroImg.imageUrl} 
+                  alt={heroImg.description || "Hero Image"}
+                  width={1200}
+                  height={600}
+                  className="object-cover transition-transform duration-700 group-hover:scale-105"
+                  data-ai-hint={heroImg.imageHint}
+                />
+              ) : (
+                <div className="aspect-[2/1] flex items-center justify-center">
+                  <Printer className="h-12 w-12 text-muted-foreground opacity-20" />
+                </div>
+              )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
             </div>
           </div>
@@ -92,14 +97,20 @@ export default function Home() {
               }
             ].map((service, idx) => (
               <Card key={idx} className="bg-card border-white/5 hover:border-primary/50 transition-all group overflow-hidden">
-                <div className="h-48 relative">
-                  <Image 
-                    src={service.img?.imageUrl || ""} 
-                    alt={service.title} 
-                    fill 
-                    className="object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
-                    data-ai-hint={service.img?.imageHint}
-                  />
+                <div className="h-48 relative bg-muted/10">
+                  {service.img?.imageUrl ? (
+                    <Image 
+                      src={service.img.imageUrl} 
+                      alt={service.title} 
+                      fill 
+                      className="object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
+                      data-ai-hint={service.img.imageHint}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <service.icon className="h-8 w-8 text-muted-foreground opacity-20" />
+                    </div>
+                  )}
                 </div>
                 <CardHeader>
                   <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
