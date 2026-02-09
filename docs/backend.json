@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "Order": {
@@ -30,7 +31,7 @@
         },
         "orderStatus": {
           "type": "string",
-          "description": "The current status of the order (e.g., Received, In Review, Printing, Ready for Pickup!)."
+          "description": "The current status of the order."
         },
         "orderDate": {
           "type": "string",
@@ -57,49 +58,63 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "ShopConfiguration",
       "type": "object",
-      "description": "Represents customizable settings for the printing shop.",
+      "description": "Represents customizable settings for the printing shop including UI content and pricing data.",
       "properties": {
         "id": {
-          "type": "string",
-          "description": "Unique identifier for the shop configuration."
+          "type": "string"
         },
         "shopName": {
-          "type": "string",
-          "description": "The name of the printing shop."
+          "type": "string"
         },
         "logoUrl": {
           "type": "string",
-          "description": "URL of the shop's logo image.",
           "format": "uri"
         },
         "currency": {
-          "type": "string",
-          "description": "The currency used by the shop (e.g., PHP for Philippine Peso)."
+          "type": "string"
+        },
+        "heroTitle": {
+          "type": "string"
+        },
+        "heroSubtitle": {
+          "type": "string"
         },
         "businessHours": {
-          "type": "string",
-          "description": "Shop business hours in a textual format (e.g., 'Mon-Fri: 9am-6pm, Sat: 10am-2pm')."
+          "type": "string"
         },
         "aboutUsText": {
-          "type": "string",
-          "description": "The 'About Us' text displayed on the landing page."
+          "type": "string"
         },
         "contactInformation": {
-          "type": "string",
-          "description": "The shop's contact information (e.g., address, phone number)."
+          "type": "string"
         },
-        "defaultPricingFormula": {
-          "type": "string",
-          "description": "Default formula used for price calculation in cost calculator."
+        "products": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "basePrice": { "type": "number" }
+            }
+          }
+        },
+        "finishes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "multiplier": { "type": "number" }
+            }
+          }
         }
       },
       "required": [
         "id",
         "shopName",
-        "currency",
-        "businessHours",
-        "aboutUsText",
-        "contactInformation"
+        "currency"
       ]
     }
   },
@@ -118,7 +133,7 @@
           "schema": {
             "$ref": "#/backend/entities/ShopConfiguration"
           },
-          "description": "Stores customizable shop settings. Read-only for the public, editable by admins.",
+          "description": "Stores customizable shop settings.",
           "params": [
             {
               "name": "shopConfigurationId",
@@ -134,32 +149,15 @@
           "schema": {
             "$ref": "#/backend/entities/Order"
           },
-          "description": "Stores order details. Publicly readable via unique ID for tracking, editable only by admins.",
+          "description": "Stores order details.",
           "params": [
             {
               "name": "orderReferenceNumber",
-              "description": "Unique order reference number, serves as the document ID."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/roles_admin/{userId}",
-        "definition": {
-          "entityName": "role_admin",
-          "schema": {
-            "$ref": "#/backend/entities/Order"
-          },
-          "description": "Collection to store admin roles. Existence of a document with the user's UID grants admin privileges.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The Firebase UID of the user with admin privileges."
+              "description": "Unique order reference number."
             }
           ]
         }
       }
-    ],
-    "reasoning": "The updated structure allows for a mixed-access model. Shop configuration and order tracking are now publicly readable to ensure the application's core functionality (branding, pricing, and status checks) works for all visitors. Order placement is also public. Administrative controls remain strictly protected via the roles_admin check."
+    ]
   }
 }

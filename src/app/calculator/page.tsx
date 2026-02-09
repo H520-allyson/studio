@@ -14,27 +14,19 @@ import { Calculator, ArrowRight, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
-const PRODUCT_PRICES: Record<string, number> = {
-  "business-cards": 0.25,
-  "flyers": 0.40,
-  "posters": 5.00,
-  "banners": 15.00,
-  "custom": 2.00,
-};
-
-const FINISH_MULTIPLIER: Record<string, number> = {
-  "matte": 1,
-  "glossy": 1.1,
-  "laminated": 1.3,
-  "uv-coated": 1.5,
-};
+const DEFAULT_FINISHES = [
+  { id: "matte", name: "Matte", multiplier: 1 },
+  { id: "glossy", name: "Glossy", multiplier: 1.1 },
+  { id: "laminated", name: "Laminated", multiplier: 1.3 },
+  { id: "uv-coated", name: "UV Coated", multiplier: 1.5 },
+];
 
 export default function CalculatorPage() {
   const { firestore } = useFirebase();
-  const [product, setProduct] = useState("business-cards");
+  const [productId, setProductId] = useState("");
   const [size, setSize] = useState("a4");
   const [quantity, setQuantity] = useState(100);
-  const [finish, setFinish] = useState("matte");
+  const [finishId, setFinishId] = useState("matte");
 
   const configRef = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -43,17 +35,37 @@ export default function CalculatorPage() {
 
   const { data: config, isLoading } = useDoc(configRef);
 
-  const totalEstimate = useMemo(() => {
-    const base = PRODUCT_PRICES[product] || 1;
-    const finishMod = FINISH_MULTIPLIER[finish] || 1;
-    let sizeMod = 1;
+  // Initialize selected product when config loads
+  useMemo(() => {
+    if (config?.products?.length && !productId) {
+      setProductId(config.products[0].id);
+    }
+  }, [config, productId]);
 
+  const totalEstimate = useMemo(() => {
+    if (!config || !productId) return "0.00";
+    
+    const product = config.products?.find((p: any) => p.id === productId);
+    const base = product?.basePrice || 0;
+    
+    const finishes = config.finishes || DEFAULT_FINISHES;
+    const finish = finishes.find((f: any) => f.id === finishId);
+    const finishMod = finish?.multiplier || 1;
+    
+    let sizeMod = 1;
     if (size === "a3") sizeMod = 1.8;
     if (size === "custom") sizeMod = 2.5;
 
-    // Simple calculation, in future we could use config.defaultPricingFormula
     return (base * quantity * finishMod * sizeMod).toFixed(2);
-  }, [product, size, quantity, finish]);
+  }, [config, productId, size, quantity, finishId]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-10 w-10 text-primary animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pt-32 pb-20 px-4">
@@ -65,7 +77,7 @@ export default function CalculatorPage() {
             Cost Estimator
           </h1>
           <p className="text-muted-foreground">
-            Get an instant quote for your printing project. Prices are estimates and subject to final review.
+            Get an instant quote based on current {config?.shopName || "Print Genie"} pricing.
           </p>
         </div>
 
@@ -73,21 +85,19 @@ export default function CalculatorPage() {
           <Card className="md:col-span-2 border-white/5 bg-card">
             <CardHeader>
               <CardTitle>Configuration</CardTitle>
-              <CardDescription>Select your project details below</CardDescription>
+              <CardDescription>Select project details</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
                 <Label>Product Type</Label>
-                <Select value={product} onValueChange={setProduct}>
+                <Select value={productId} onValueChange={setProductId}>
                   <SelectTrigger className="bg-muted/30">
                     <SelectValue placeholder="Select a product" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="business-cards">Business Cards</SelectItem>
-                    <SelectItem value="flyers">Flyers</SelectItem>
-                    <SelectItem value="posters">Posters</SelectItem>
-                    <SelectItem value="banners">Banners</SelectItem>
-                    <SelectItem value="custom">Custom Print</SelectItem>
+                    {(config?.products || []).map((p: any) => (
+                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -129,15 +139,14 @@ export default function CalculatorPage() {
 
               <div className="space-y-2">
                 <Label>Finish</Label>
-                <Select value={finish} onValueChange={setFinish}>
+                <Select value={finishId} onValueChange={setFinishId}>
                   <SelectTrigger className="bg-muted/30">
                     <SelectValue placeholder="Select a finish" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="matte">Matte</SelectItem>
-                    <SelectItem value="glossy">Glossy</SelectItem>
-                    <SelectItem value="laminated">Laminated</SelectItem>
-                    <SelectItem value="uv-coated">UV Coated</SelectItem>
+                    {(config?.finishes || DEFAULT_FINISHES).map((f: any) => (
+                      <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -154,7 +163,7 @@ export default function CalculatorPage() {
                 <span>{totalEstimate}</span>
               </div>
               <p className="text-sm text-muted-foreground">
-                Base Price + {finish.charAt(0).toUpperCase() + finish.slice(1)} finish
+                Pricing updated live from shop settings
               </p>
               <div className="pt-4">
                 <Button asChild className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold">

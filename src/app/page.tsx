@@ -1,17 +1,38 @@
+
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import { Navbar } from "@/components/layout/Navbar";
 import { PrintAssistant } from "@/components/chat/PrintAssistant";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CreditCard, Image as ImageIcon, Layout, Printer, Mail, Phone, MapPin, Zap } from "lucide-react";
+import { CreditCard, Image as ImageIcon, Layout, Printer, Mail, Phone, MapPin, Zap, Loader2 } from "lucide-react";
+import { useFirebase, useDoc, useMemoFirebase } from "@/firebase";
+import { doc } from "firebase/firestore";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 
 export default function Home() {
+  const { firestore } = useFirebase();
   const heroImg = PlaceHolderImages.find(img => img.id === 'hero-printing');
   const bizCardsImg = PlaceHolderImages.find(img => img.id === 'service-business-cards');
   const bannersImg = PlaceHolderImages.find(img => img.id === 'service-banners');
   const customPrintsImg = PlaceHolderImages.find(img => img.id === 'service-custom-prints');
+
+  const configRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, "shop_configuration", "main");
+  }, [firestore]);
+
+  const { data: config, isLoading } = useDoc(configRef);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 text-primary animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background font-body">
@@ -29,10 +50,10 @@ export default function Home() {
                 <Zap className="h-4 w-4" /> AI-Enhanced Printing Shop
               </div>
               <h1 className="text-5xl md:text-7xl font-bold tracking-tight leading-tight">
-                Print Your <span className="text-primary neon-text">Vision</span> with Precision
+                {config?.heroTitle || "Print Your Vision with Precision"}
               </h1>
               <p className="text-xl text-muted-foreground max-w-lg">
-                High-resolution printing, professional finishes, and AI-powered quality checks. From business cards to massive banners, we bring your ideas to life.
+                {config?.heroSubtitle || "High-resolution printing, professional finishes, and AI-powered quality checks. From business cards to massive banners, we bring your ideas to life."}
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button asChild size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold h-14 px-8 neon-glow">
@@ -135,9 +156,7 @@ export default function Home() {
           </div>
           <h2 className="text-4xl font-bold tracking-tight">Precision at Every Pixel</h2>
           <p className="text-xl text-muted-foreground leading-relaxed">
-            At Print Genie, we combine decades of printing expertise with cutting-edge AI technology. 
-            Our intelligent pre-check system ensures your designs are perfectly optimized for the 
-            material you choose, saving you time and ensuring perfection every single time.
+            {config?.aboutUsText || "At Print Genie, we combine decades of printing expertise with cutting-edge AI technology."}
           </p>
         </div>
       </section>
@@ -175,7 +194,7 @@ export default function Home() {
                 </div>
                 <div>
                   <p className="font-bold">Visit Shop</p>
-                  <p className="text-muted-foreground">123 Design Lane, Creative City, ST 90210</p>
+                  <p className="text-muted-foreground">{config?.contactInformation || "123 Design Lane, ST 90210"}</p>
                 </div>
               </div>
             </div>
@@ -208,7 +227,7 @@ export default function Home() {
       </section>
 
       <footer className="py-12 border-t border-white/5 text-center text-muted-foreground text-sm">
-        <p>© {new Date().getFullYear()} Print Genie. All rights reserved.</p>
+        <p>© {new Date().getFullYear()} {config?.shopName || "Print Genie"}. All rights reserved.</p>
       </footer>
 
       <PrintAssistant />

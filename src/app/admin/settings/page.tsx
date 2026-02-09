@@ -3,31 +3,28 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import { doc, setDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useFirebase, useDoc, useMemoFirebase } from "@/firebase";
-import { Navbar } from "@/components/layout/Navbar";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Settings, Save, Upload, Loader2, ArrowLeft, Store, DollarSign, Clock, Info } from "lucide-react";
+import { Settings, Save, Upload, Loader2, ArrowLeft, Store, DollarSign, Clock, Info, Plus, Trash2, Layout } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
 export default function ShopSettingsPage() {
-  const { auth, firestore, storage, user } = useFirebase();
+  const { firestore, storage } = useFirebase();
   const router = useRouter();
   const { toast } = useToast();
   
-  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
 
-  // Shop configuration is stored in a single document named 'main'
   const configRef = useMemoFirebase(() => {
     if (!firestore) return null;
     return doc(firestore, "shop_configuration", "main");
@@ -39,10 +36,20 @@ export default function ShopSettingsPage() {
     shopName: "Print Genie",
     logoUrl: "",
     currency: "PHP",
+    heroTitle: "Print Your Vision with Precision",
+    heroSubtitle: "High-resolution printing, professional finishes, and AI-powered quality checks.",
     businessHours: "Mon-Fri: 9am-6pm",
     aboutUsText: "We provide high-quality professional printing services powered by AI.",
     contactInformation: "123 Design Lane, Creative City",
-    defaultPricingFormula: "base_price * quantity * finish_multiplier",
+    products: [
+      { id: "business-cards", name: "Business Cards", basePrice: 0.25 },
+      { id: "flyers", name: "Flyers", basePrice: 0.40 },
+      { id: "posters", name: "Posters", basePrice: 5.00 },
+    ],
+    finishes: [
+      { id: "matte", name: "Matte", multiplier: 1 },
+      { id: "glossy", name: "Glossy", multiplier: 1.1 },
+    ]
   });
 
   useEffect(() => {
@@ -51,10 +58,13 @@ export default function ShopSettingsPage() {
         shopName: config.shopName || "Print Genie",
         logoUrl: config.logoUrl || "",
         currency: config.currency || "PHP",
+        heroTitle: config.heroTitle || "Print Your Vision with Precision",
+        heroSubtitle: config.heroSubtitle || "High-resolution printing, professional finishes, and AI-powered quality checks.",
         businessHours: config.businessHours || "Mon-Fri: 9am-6pm",
         aboutUsText: config.aboutUsText || "",
         contactInformation: config.contactInformation || "",
-        defaultPricingFormula: config.defaultPricingFormula || "base_price * quantity * finish_multiplier",
+        products: config.products || [],
+        finishes: config.finishes || [],
       });
     }
   }, [config]);
@@ -77,8 +87,7 @@ export default function ShopSettingsPage() {
     }
   };
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSave = async () => {
     if (!firestore || !configRef) return;
 
     setSaving(true);
@@ -87,14 +96,30 @@ export default function ShopSettingsPage() {
         ...formData,
         updatedAt: new Date(),
       }, { merge: true });
-      toast({ title: "Settings Saved", description: "Shop configuration has been updated successfully." });
+      toast({ title: "Settings Saved", description: "Shop configuration updated." });
     } catch (err: any) {
       toast({ title: "Save Failed", description: err.message, variant: "destructive" });
     } finally {
-      setSaving(true);
-      // Wait a beat to show the success state
-      setTimeout(() => setSaving(false), 500);
+      setSaving(false);
     }
+  };
+
+  const addProduct = () => {
+    setFormData(p => ({
+      ...p,
+      products: [...p.products, { id: Math.random().toString(36).substr(2, 9), name: "New Product", basePrice: 1.00 }]
+    }));
+  };
+
+  const removeProduct = (id: string) => {
+    setFormData(p => ({ ...p, products: p.products.filter(item => item.id !== id) }));
+  };
+
+  const updateProduct = (id: string, field: string, value: string | number) => {
+    setFormData(p => ({
+      ...p,
+      products: p.products.map(item => item.id === id ? { ...item, [field]: value } : item)
+    }));
   };
 
   if (configLoading) {
@@ -110,69 +135,68 @@ export default function ShopSettingsPage() {
       <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-white/10 px-8 h-16 flex items-center justify-between">
          <div className="flex items-center gap-4">
            <Button asChild variant="ghost" size="sm">
-             <Link href="/admin/dashboard"><ArrowLeft className="h-4 w-4 mr-2" /> Back</Link>
+             <Link href="/admin/dashboard"><ArrowLeft className="h-4 w-4 mr-2" /> Dashboard</Link>
            </Button>
            <div className="h-4 w-px bg-white/10 mx-2" />
            <div className="flex items-center gap-2">
              <Settings className="h-5 w-5 text-primary" />
-             <span className="font-bold text-lg">Shop Settings</span>
+             <span className="font-bold text-lg">Shop Customizer</span>
            </div>
          </div>
+         <Button onClick={handleSave} disabled={saving} className="bg-primary text-primary-foreground font-bold px-8 neon-glow">
+           {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+           Save All Changes
+         </Button>
       </nav>
 
-      <div className="max-w-4xl mx-auto">
-        <form onSubmit={handleSave} className="space-y-8">
-          <Card className="border-white/5 bg-card">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Store className="h-5 w-5 text-primary" />
-                Shop Identity
-              </CardTitle>
-              <CardDescription>Basic information about your business.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="shopName">Shop Name</Label>
-                  <Input 
-                    id="shopName" 
-                    value={formData.shopName} 
-                    onChange={e => setFormData(p => ({ ...p, shopName: e.target.value }))}
-                    className="bg-muted/30 border-white/10"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="currency">Base Currency</Label>
-                  <Input 
-                    id="currency" 
-                    value={formData.currency} 
-                    onChange={e => setFormData(p => ({ ...p, currency: e.target.value }))}
-                    className="bg-muted/30 border-white/10"
-                    placeholder="e.g. PHP"
-                  />
-                </div>
-              </div>
+      <div className="max-w-5xl mx-auto">
+        <Tabs defaultValue="identity" className="space-y-8">
+          <TabsList className="bg-muted/50 border border-white/5 p-1">
+            <TabsTrigger value="identity" className="gap-2"><Store className="h-4 w-4" /> Identity</TabsTrigger>
+            <TabsTrigger value="layout" className="gap-2"><Layout className="h-4 w-4" /> UI & Layout</TabsTrigger>
+            <TabsTrigger value="pricing" className="gap-2"><DollarSign className="h-4 w-4" /> Pricing</TabsTrigger>
+            <TabsTrigger value="about" className="gap-2"><Info className="h-4 w-4" /> About & Contact</TabsTrigger>
+          </TabsList>
 
-              <div className="space-y-4">
-                <Label>Shop Logo</Label>
-                <div className="flex items-center gap-6">
-                  <div className="h-24 w-24 rounded-lg border border-white/10 bg-muted/20 flex items-center justify-center overflow-hidden relative group">
-                    {formData.logoUrl ? (
-                      <Image src={formData.logoUrl} alt="Logo Preview" fill className="object-contain p-2" />
-                    ) : (
-                      <Store className="h-10 w-10 text-muted-foreground" />
-                    )}
+          <TabsContent value="identity" className="space-y-6">
+            <Card className="border-white/5 bg-card">
+              <CardHeader>
+                <CardTitle>Shop Identity</CardTitle>
+                <CardDescription>Basic branding elements.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="shopName">Shop Name</Label>
+                    <Input 
+                      id="shopName" 
+                      value={formData.shopName} 
+                      onChange={e => setFormData(p => ({ ...p, shopName: e.target.value }))}
+                      className="bg-muted/30 border-white/10"
+                    />
                   </div>
-                  <div className="flex-1 space-y-2">
-                    <div className="relative">
-                      <input 
-                        type="file" 
-                        id="logo-upload" 
-                        className="hidden" 
-                        accept="image/*" 
-                        onChange={handleLogoUpload}
-                        disabled={uploading}
-                      />
+                  <div className="space-y-2">
+                    <Label htmlFor="currency">Base Currency</Label>
+                    <Input 
+                      id="currency" 
+                      value={formData.currency} 
+                      onChange={e => setFormData(p => ({ ...p, currency: e.target.value }))}
+                      className="bg-muted/30 border-white/10"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <Label>Shop Logo</Label>
+                  <div className="flex items-center gap-6">
+                    <div className="h-24 w-24 rounded-lg border border-white/10 bg-muted/20 flex items-center justify-center overflow-hidden relative">
+                      {formData.logoUrl ? (
+                        <Image src={formData.logoUrl} alt="Logo Preview" fill className="object-contain p-2" />
+                      ) : (
+                        <Store className="h-10 w-10 text-muted-foreground" />
+                      )}
+                    </div>
+                    <div className="flex-1 space-y-2">
+                      <input type="file" id="logo-upload" className="hidden" accept="image/*" onChange={handleLogoUpload} disabled={uploading} />
                       <Button asChild variant="outline" size="sm" className="border-white/10">
                         <label htmlFor="logo-upload" className="cursor-pointer">
                           {uploading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Upload className="h-4 w-4 mr-2" />}
@@ -180,86 +204,120 @@ export default function ShopSettingsPage() {
                         </label>
                       </Button>
                     </div>
-                    <p className="text-xs text-muted-foreground">Recommended: PNG or SVG with transparent background.</p>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-          <Card className="border-white/5 bg-card">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <DollarSign className="h-5 w-5 text-primary" />
-                Pricing & Operations
-              </CardTitle>
-              <CardDescription>Configure how your shop calculates costs and when it operates.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="formula">Pricing Logic Formula</Label>
-                <Input 
-                  id="formula" 
-                  value={formData.defaultPricingFormula} 
-                  onChange={e => setFormData(p => ({ ...p, defaultPricingFormula: e.target.value }))}
-                  className="bg-muted/30 border-white/10 font-mono"
-                />
-                <p className="text-[10px] text-muted-foreground">Available variables: base_price, quantity, finish_multiplier</p>
-              </div>
+          <TabsContent value="layout" className="space-y-6">
+            <Card className="border-white/5 bg-card">
+              <CardHeader>
+                <CardTitle>Home Page Layout</CardTitle>
+                <CardDescription>Customize the text seen by visitors on the landing page.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-2">
+                  <Label>Hero Main Title</Label>
+                  <Input 
+                    value={formData.heroTitle} 
+                    onChange={e => setFormData(p => ({ ...p, heroTitle: e.target.value }))}
+                    className="bg-muted/30 border-white/10"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Hero Subtitle Description</Label>
+                  <Textarea 
+                    value={formData.heroSubtitle} 
+                    onChange={e => setFormData(p => ({ ...p, heroSubtitle: e.target.value }))}
+                    className="bg-muted/30 border-white/10"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-              <div className="space-y-2">
-                <Label htmlFor="hours" className="flex items-center gap-2">
-                  <Clock className="h-4 w-4" /> Business Hours
-                </Label>
-                <Input 
-                  id="hours" 
-                  value={formData.businessHours} 
-                  onChange={e => setFormData(p => ({ ...p, businessHours: e.target.value }))}
-                  className="bg-muted/30 border-white/10"
-                />
-              </div>
-            </CardContent>
-          </Card>
+          <TabsContent value="pricing" className="space-y-6">
+            <Card className="border-white/5 bg-card">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Product Catalog & Pricing</CardTitle>
+                  <CardDescription>Manage the items available in the cost estimator.</CardDescription>
+                </div>
+                <Button onClick={addProduct} size="sm" className="gap-2">
+                  <Plus className="h-4 w-4" /> Add Product
+                </Button>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-12 gap-4 text-xs font-bold text-muted-foreground uppercase tracking-wider px-2">
+                  <div className="col-span-7">Product Name</div>
+                  <div className="col-span-4">Base Price ({formData.currency})</div>
+                  <div className="col-span-1"></div>
+                </div>
+                {formData.products.map((product) => (
+                  <div key={product.id} className="grid grid-cols-12 gap-4 items-center bg-muted/20 p-2 rounded-lg border border-white/5">
+                    <div className="col-span-7">
+                      <Input 
+                        value={product.name} 
+                        onChange={(e) => updateProduct(product.id, "name", e.target.value)}
+                        className="h-9 bg-transparent border-white/10"
+                      />
+                    </div>
+                    <div className="col-span-4">
+                      <Input 
+                        type="number"
+                        step="0.01"
+                        value={product.basePrice} 
+                        onChange={(e) => updateProduct(product.id, "basePrice", parseFloat(e.target.value))}
+                        className="h-9 bg-transparent border-white/10"
+                      />
+                    </div>
+                    <div className="col-span-1 flex justify-end">
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => removeProduct(product.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-          <Card className="border-white/5 bg-card">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Info className="h-5 w-5 text-primary" />
-                About & Contact
-              </CardTitle>
-              <CardDescription>Information displayed on your landing page.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="about">About Us Description</Label>
-                <Textarea 
-                  id="about" 
-                  value={formData.aboutUsText} 
-                  onChange={e => setFormData(p => ({ ...p, aboutUsText: e.target.value }))}
-                  className="bg-muted/30 border-white/10 min-h-[100px]"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="contact">Contact Information</Label>
-                <Textarea 
-                  id="contact" 
-                  value={formData.contactInformation} 
-                  onChange={e => setFormData(p => ({ ...p, contactInformation: e.target.value }))}
-                  className="bg-muted/30 border-white/10 min-h-[80px]"
-                  placeholder="Address, Phone, Email..."
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          <div className="flex justify-end gap-4">
-            <Button type="button" variant="ghost" onClick={() => router.back()}>Cancel</Button>
-            <Button type="submit" disabled={saving} className="bg-primary text-primary-foreground font-bold px-8 neon-glow">
-              {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-              Save All Changes
-            </Button>
-          </div>
-        </form>
+          <TabsContent value="about" className="space-y-6">
+            <Card className="border-white/5 bg-card">
+              <CardHeader>
+                <CardTitle>About & Operations</CardTitle>
+                <CardDescription>Information shown in the footer and about section.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-2">
+                  <Label>About Us Description</Label>
+                  <Textarea 
+                    value={formData.aboutUsText} 
+                    onChange={e => setFormData(p => ({ ...p, aboutUsText: e.target.value }))}
+                    className="bg-muted/30 border-white/10 min-h-[100px]"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Contact Information</Label>
+                  <Textarea 
+                    value={formData.contactInformation} 
+                    onChange={e => setFormData(p => ({ ...p, contactInformation: e.target.value }))}
+                    className="bg-muted/30 border-white/10"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2"><Clock className="h-4 w-4" /> Business Hours</Label>
+                  <Input 
+                    value={formData.businessHours} 
+                    onChange={e => setFormData(p => ({ ...p, businessHours: e.target.value }))}
+                    className="bg-muted/30 border-white/10"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
