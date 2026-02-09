@@ -2,16 +2,36 @@
 "use client";
 
 import Link from "next/link";
-import { Printer, Calculator, PackageSearch, UserCircle } from "lucide-react";
+import { Printer, Calculator, PackageSearch } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useFirebase, useDoc, useMemoFirebase } from "@/firebase";
+import { doc } from "firebase/firestore";
+import Image from "next/image";
 
 export function Navbar() {
+  const { firestore } = useFirebase();
+  
+  const configRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, "shop_configuration", "main");
+  }, [firestore]);
+
+  const { data: config } = useDoc(configRef);
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-white/10">
       <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 group">
-          <Printer className="h-6 w-6 text-primary group-hover:rotate-12 transition-transform" />
-          <span className="text-xl font-bold tracking-tight neon-text">Print Genie</span>
+          {config?.logoUrl ? (
+            <div className="h-8 w-8 relative">
+              <Image src={config.logoUrl} alt="Shop Logo" fill className="object-contain" />
+            </div>
+          ) : (
+            <Printer className="h-6 w-6 text-primary group-hover:rotate-12 transition-transform" />
+          )}
+          <span className="text-xl font-bold tracking-tight neon-text">
+            {config?.shopName || "Print Genie"}
+          </span>
         </Link>
 
         <div className="hidden md:flex items-center gap-6">

@@ -2,13 +2,15 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useFirebase, useDoc, useMemoFirebase } from "@/firebase";
+import { doc } from "firebase/firestore";
 import { Navbar } from "@/components/layout/Navbar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
-import { Calculator, DollarSign, ArrowRight } from "lucide-react";
+import { Calculator, ArrowRight, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
@@ -28,10 +30,18 @@ const FINISH_MULTIPLIER: Record<string, number> = {
 };
 
 export default function CalculatorPage() {
+  const { firestore } = useFirebase();
   const [product, setProduct] = useState("business-cards");
   const [size, setSize] = useState("a4");
   const [quantity, setQuantity] = useState(100);
   const [finish, setFinish] = useState("matte");
+
+  const configRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, "shop_configuration", "main");
+  }, [firestore]);
+
+  const { data: config, isLoading } = useDoc(configRef);
 
   const totalEstimate = useMemo(() => {
     const base = PRODUCT_PRICES[product] || 1;
@@ -41,6 +51,7 @@ export default function CalculatorPage() {
     if (size === "a3") sizeMod = 1.8;
     if (size === "custom") sizeMod = 2.5;
 
+    // Simple calculation, in future we could use config.defaultPricingFormula
     return (base * quantity * finishMod * sizeMod).toFixed(2);
   }, [product, size, quantity, finish]);
 
@@ -139,7 +150,7 @@ export default function CalculatorPage() {
             </CardHeader>
             <CardContent className="space-y-6 text-center py-8">
               <div className="flex items-center justify-center gap-1 text-5xl font-bold text-primary">
-                <DollarSign className="h-8 w-8" />
+                <span className="text-2xl mr-1">{config?.currency || "PHP"}</span>
                 <span>{totalEstimate}</span>
               </div>
               <p className="text-sm text-muted-foreground">

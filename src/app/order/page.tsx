@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -10,14 +9,17 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { PackageSearch, Upload, CheckCircle2, AlertTriangle, FileText, Loader2 } from "lucide-react";
-import { db, storage } from "@/lib/firebase";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { PackageSearch, Upload, CheckCircle2, AlertTriangle, Loader2 } from "lucide-react";
+import { useFirebase } from "@/firebase";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { imageResolutionPrecheck } from "@/ai/flows/image-resolution-precheck";
 import Link from "next/link";
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 
 export default function OrderPage() {
+  const { firestore, storage } = useFirebase();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [notes, setNotes] = useState("");
@@ -36,14 +38,12 @@ export default function OrderPage() {
     setFile(selectedFile);
     setAiWarning(null);
 
-    // AI Resolution Pre-check
     if (selectedFile.type.startsWith("image/")) {
       setCheckingImage(true);
       try {
         const reader = new FileReader();
         reader.onloadend = async () => {
           const dataUri = reader.result as string;
-          // Simulation of print size (e.g., user wants 24x36 inches)
           const result = await imageResolutionPrecheck({
             photoDataUri: dataUri,
             printWidthInches: 24,
@@ -65,13 +65,12 @@ export default function OrderPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!file || !name || !email) return;
+    if (!file || !name || !email || !storage || !firestore) return;
 
     setUploading(true);
     const orderRefId = Math.random().toString(36).substring(2, 9).toUpperCase();
     
     try {
-      // 1. Upload to Storage
       const storageRef = ref(storage, `orders/${orderRefId}_${file.name}`);
       const uploadTask = uploadBytesResumable(storageRef, file);
 
@@ -88,8 +87,7 @@ export default function OrderPage() {
         async () => {
           const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
           
-          // 2. Save to Firestore
-          const docRef = await addDoc(collection(db, "orders"), {
+          const orderData = {
             orderReferenceNumber: orderRefId,
             clientName: name,
             clientEmail: email,
@@ -98,11 +96,25 @@ export default function OrderPage() {
             fileName: file.name,
             orderStatus: "Received",
             orderDate: serverTimestamp(),
-          });
+          };
 
-          setOrderId(orderRefId);
-          setIsDone(true);
-          setUploading(false);
+          const docRef = doc(firestore, "orders", orderRefId);
+          
+          setDoc(docRef, orderData)
+            .then(() => {
+              setOrderId(orderRefId);
+              setIsDone(true);
+              setUploading(false);
+            })
+            .catch(async (serverError) => {
+              const permissionError = new FirestorePermissionError({
+                path: docRef.path,
+                operation: 'create',
+                requestResourceData: orderData,
+              } satisfies SecurityRuleContext);
+              errorEmitter.emit('permission-error', permissionError);
+              setUploading(false);
+            });
         }
       );
     } catch (err) {

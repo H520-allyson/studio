@@ -1,13 +1,11 @@
-
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
 import { Navbar } from "@/components/layout/Navbar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { useFirebase, useDoc, useMemoFirebase } from "@/firebase";
+import { doc } from "firebase/firestore";
+import { useParams } from "next/navigation";
 import { Package, Clock, FileCheck, Printer, CheckCircle, Loader2 } from "lucide-react";
 
 type Order = {
@@ -28,28 +26,16 @@ const STATUS_CONFIG = {
 
 export default function StatusPage() {
   const { orderId } = useParams();
-  const [order, setOrder] = useState<Order | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { firestore } = useFirebase();
 
-  useEffect(() => {
-    const fetchOrder = async () => {
-      try {
-        const q = query(collection(db, "orders"), where("orderReferenceNumber", "==", orderId));
-        const querySnapshot = await getDocs(q);
-        if (!querySnapshot.empty) {
-          const doc = querySnapshot.docs[0];
-          setOrder({ id: doc.id, ...doc.data() } as Order);
-        }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    if (orderId) fetchOrder();
-  }, [orderId]);
+  const orderRef = useMemoFirebase(() => {
+    if (!firestore || !orderId) return null;
+    return doc(firestore, "orders", orderId as string);
+  }, [firestore, orderId]);
 
-  if (loading) {
+  const { data: order, isLoading } = useDoc<Order>(orderRef);
+
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="h-10 w-10 text-primary animate-spin" />
