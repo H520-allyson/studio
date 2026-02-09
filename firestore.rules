@@ -33,10 +33,12 @@ service cloud.firestore {
 
     /**
      * @description Administrative roles registry.
+     * For prototyping, we allow users to create their own admin entry upon registration.
      */
     match /roles_admin/{userId} {
       allow get: if isSignedIn() && request.auth.uid == userId;
-      allow list, create, update, delete: if isAdmin();
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow list, update, delete: if isAdmin();
     }
 
     /**
