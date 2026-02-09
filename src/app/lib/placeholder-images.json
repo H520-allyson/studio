@@ -1,0 +1,29 @@
+
+{
+  "placeholderImages": [
+    {
+      "id": "hero-printing",
+      "description": "Professional printing press in action",
+      "imageUrl": "https://picsum.photos/seed/print1/1200/600",
+      "imageHint": "printing press"
+    },
+    {
+      "id": "service-business-cards",
+      "description": "Stack of elegant business cards",
+      "imageUrl": "https://picsum.photos/seed/cards/600/400",
+      "imageHint": "business cards"
+    },
+    {
+      "id": "service-banners",
+      "description": "Large format colorful banners",
+      "imageUrl": "https://picsum.photos/seed/banner/600/400",
+      "imageHint": "advertising banners"
+    },
+    {
+      "id": "service-custom-prints",
+      "description": "Custom wall art and posters",
+      "imageUrl": "https://picsum.photos/seed/art/600/400",
+      "imageHint": "custom posters"
+    }
+  ]
+}
