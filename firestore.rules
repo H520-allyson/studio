@@ -1,34 +1,12 @@
 rules_version = '2';
 
 /**
- * FIRESTORE SECURITY RULES - PROTOTYPING MODE
+ * FIRESTORE SECURITY RULES - PRINT GENIE
  * 
  * Core Philosophy:
- * This ruleset implements a Role-Based Access Control (RBAC) model centered around an administrative tier. 
- * Access to sensitive business data, including order management and global shop configurations, is 
- * strictly limited to users verified as administrators.
- * 
- * Data Structure:
- * - /roles_admin/{userId}: A registry of administrative users. Existence of a document here 
- *   grants the corresponding UID elevated privileges across the database.
- * - /shop_configuration/{configId}: Global settings for the storefront (logo, pricing, shop name).
- * - /orders/{orderReferenceNumber}: Customer order data managed by the admin team.
- * 
- * Key Security Decisions:
- * 1. Admin-Centric Access: Following the provided IR reasoning, both 'orders' and 'shop_configuration' 
- *    are restricted to authenticated admins. This ensures that while the shop is being customized 
- *    (e.g., currency set to PHP, logo uploads), only authorized personnel can view or modify data.
- * 2. Look-up Based Authorization: Admin status is determined by checking for the existence of 
- *    a document in the 'roles_admin' collection using the user's UID.
- * 3. Relational Integrity: For orders, the rules enforce that the internal 'orderReferenceNumber' 
- *    matches the document ID during creation to prevent data corruption.
- * 4. Prototyping Flexibility: While authorization is strictly enforced (who can access), 
- *    data schema validation (the shape of the objects) is omitted to allow for rapid 
- *    iteration of shop features and pricing formulas.
- * 
- * Denormalization for Authorization:
- * - Admin roles are stored in a dedicated collection (/roles_admin) to allow for a 
- *   single, performant 'exists()' check that governs all protected paths.
+ * This ruleset implements a flexible access model that supports public-facing features 
+ * (shop branding, order placement, and tracking) while strictly securing administrative 
+ * operations (managing all orders and shop settings).
  */
 
 service cloud.firestore {
@@ -51,65 +29,37 @@ service cloud.firestore {
       return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
     }
 
-    /**
-     * @description Verifies if the user is the owner of the document based on the path UID.
-     */
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-
-    /**
-     * @description Combines admin check with document existence for destructive operations.
-     */
-    function isExistingAdmin() {
-      return isAdmin() && resource != null;
-    }
-
     // --- Collection Rules ---
 
     /**
-     * @description Administrative roles registry. Controls who has admin access to the system.
-     * @path /roles_admin/{userId}
-     * @allow (get) If user is signed in.
-     * @deny (write) If the requester is not already an admin.
-     * @principle Role-Based Access Control (RBAC).
+     * @description Administrative roles registry.
      */
     match /roles_admin/{userId} {
-      allow get: if isSignedIn();
-      allow list: if isAdmin();
-      allow create, update, delete: if isAdmin();
+      allow get: if isSignedIn() && request.auth.uid == userId;
+      allow list, create, update, delete: if isAdmin();
     }
 
     /**
      * @description Stores global shop settings like currency, logo, and pricing formulas.
-     * @path /shop_configuration/{shopConfigurationId}
-     * @allow (get) If the user is an authenticated admin.
-     * @deny (read/write) To all non-admin users.
-     * @principle Restricted administrative configuration access.
+     * Public get is allowed so the landing page and calculator can display shop info.
      */
     match /shop_configuration/{shopConfigurationId} {
-      allow get, list: if isAdmin();
-      allow create: if isAdmin();
-      allow update, delete: if isExistingAdmin();
+      allow get: if true;
+      allow list, create, update, delete: if isAdmin();
     }
 
     /**
      * @description Stores customer orders for printing services. 
-     * @path /orders/{orderReferenceNumber}
-     * @allow (create) If the user is an admin.
-     * @deny (get) If the user is not an admin.
-     * @principle Validates relational integrity by matching internal ID to path ID.
+     * - Public 'get' allows customers to track status with their reference number.
+     * - Public 'create' allows anyone to place an order.
+     * - 'list', 'update', and 'delete' are restricted to admins.
      */
     match /orders/{orderReferenceNumber} {
-      allow get, list: if isAdmin();
+      allow get: if true;
       
-      allow create: if isAdmin() 
-        && request.resource.data.orderReferenceNumber == orderReferenceNumber;
+      allow create: if request.resource.data.orderReferenceNumber == orderReferenceNumber;
 
-      allow update: if isExistingAdmin() 
-        && request.resource.data.orderReferenceNumber == resource.data.orderReferenceNumber;
-
-      allow delete: if isExistingAdmin();
+      allow list, update, delete: if isAdmin();
     }
 
   }

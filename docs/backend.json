@@ -118,7 +118,7 @@
           "schema": {
             "$ref": "#/backend/entities/ShopConfiguration"
           },
-          "description": "Stores customizable shop settings. Only accessible and editable by admins.",
+          "description": "Stores customizable shop settings. Read-only for the public, editable by admins.",
           "params": [
             {
               "name": "shopConfigurationId",
@@ -134,7 +134,7 @@
           "schema": {
             "$ref": "#/backend/entities/Order"
           },
-          "description": "Stores order details. Accessible only by authenticated admins.",
+          "description": "Stores order details. Publicly readable via unique ID for tracking, editable only by admins.",
           "params": [
             {
               "name": "orderReferenceNumber",
@@ -160,6 +160,6 @@
         }
       }
     ],
-    "reasoning": "This Firestore data structure is designed to support the Print Genie application, focusing on a secure and manageable admin panel for shop configuration and order management. The structure emphasizes authorization independence to ensure secure operations without complex rule dependencies.\n\n*   **Shop Configuration:** The `shop_configuration` collection stores customizable shop settings. Since only admins should modify this data, a dedicated `roles_admin` collection is used to manage admin privileges. Security rules will check for the existence of a document with the user's UID in this collection.\n*   **Orders:** The `orders` collection stores order details. Access is restricted to authenticated users (admins) who are part of `roles_admin`.  The `orderReferenceNumber` is used as the document ID for easy lookup and status tracking.\n\nThis design ensures that all documents in each collection share the same security posture, simplifying the security rules and enhancing debuggability.  Authorization Independence is achieved by relying solely on the `request.auth.uid` and the existence of an admin role, avoiding `get()` calls in security rules. The QAP requirements are met by restricting access to the `orders` and `shop_configuration` collections based on admin role."
+    "reasoning": "The updated structure allows for a mixed-access model. Shop configuration and order tracking are now publicly readable to ensure the application's core functionality (branding, pricing, and status checks) works for all visitors. Order placement is also public. Administrative controls remain strictly protected via the roles_admin check."
   }
 }
