@@ -1,15 +1,15 @@
 import StatusPageClient from "./StatusPageClient";
 
 /**
- * For a static export, all dynamic paths must be known at build time.
- * This function pre-generates the pages for the provided order IDs.
+ * For a static export (output: 'export'), all dynamic paths must be known at build time.
+ * This function provides example IDs so the build succeeds.
  */
 export async function generateStaticParams() {
-  // In a production app, you would fetch all order IDs from Firestore here.
-  // For this prototype, we return a few example IDs to ensure the build succeeds.
+  // In a production app with static export, you might fetch all existing IDs.
+  // For this prototype, we provide sample IDs to ensure the 'out' folder is generated.
   return [
-    { orderId: "SAMPLE-123" },
-    { orderId: "DEMO-456" }
+    { orderId: "SAMPLE1" },
+    { orderId: "SAMPLE2" }
   ];
 }
 
