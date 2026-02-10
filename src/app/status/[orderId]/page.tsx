@@ -1,20 +1,16 @@
 import StatusPageClient from "./StatusPageClient";
 
 /**
- * Mock function to satisfy generateStaticParams requirements for static export.
- * In a production app, this would fetch active IDs from Firestore during build time.
+ * For a static export, all dynamic paths must be known at build time.
+ * This function pre-generates the pages for the provided order IDs.
  */
-async function getAllOrderIds() {
-  // Static export requires known paths at build time.
-  // We return a few sample IDs to ensure the dynamic route is recognized.
-  return ["SAMPLE-123", "DEMO-456"];
-}
-
 export async function generateStaticParams() {
-  const ids = await getAllOrderIds();
-  return ids.map((id) => ({
-    orderId: id,
-  }));
+  // In a production app, you would fetch all order IDs from Firestore here.
+  // For this prototype, we return a few example IDs to ensure the build succeeds.
+  return [
+    { orderId: "SAMPLE-123" },
+    { orderId: "DEMO-456" }
+  ];
 }
 
 export default function StatusPage() {

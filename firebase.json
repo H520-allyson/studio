@@ -7,7 +7,6 @@
       "**/node_modules/**"
     ],
     "cleanUrls": true,
-    "trailingSlash": false,
-    "errorPage": "/404.html"
+    "trailingSlash": false
   }
 }
