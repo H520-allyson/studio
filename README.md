@@ -2,12 +2,21 @@
 
 Welcome to your new AI-powered printing shop! This project is set up to automatically update your website whenever you "save" your work to GitHub.
 
+## 🛠 Prerequisites (Do this first!)
+
+If you are working on your own computer and saw a "git is not recognized" error, you need to install these two tools:
+
+1.  **Git**: [Download here](https://git-scm.com/download/win) (Allows you to "Push" code).
+2.  **Node.js**: [Download here](https://nodejs.org/) (Allows you to "Build" the app).
+
+*Note: After installing, you MUST restart your PowerShell or Terminal window.*
+
 ## 🚀 How to Publish Your Website (The "Push" Guide)
 
 Think of GitHub as your master storage in the cloud. "Pushing" is the act of sending your local changes to that cloud storage.
 
 ### Step 1: Prepare your changes
-In your terminal (the command line at the bottom), tell the computer which files you want to save:
+Open your terminal inside your project folder and run:
 ```bash
 git add .
 ```
@@ -26,18 +35,13 @@ git push origin main
 
 ---
 
-## 🛠 What happens next?
-1. **GitHub** receives your code.
-2. **GitHub Actions** (the "robots" we set up) start building your website.
-3. **Firebase Hosting** receives the finished build and puts it online.
-
-You can watch this happen by going to your GitHub website and clicking the **"Actions"** tab at the top. When the yellow circle turns into a green checkmark, your site is live!
-
 ## 🔗 Your Website Link
 Your site is hosted for free at:
 **https://studio-2566474323-dc85e.web.app**
 
-## Key Features
-- **AI Quality Check**: Automatically warns users if their photos are too blurry to print.
-- **Cost Estimator**: Live price calculator based on your shop settings.
-- **Admin Portal**: A private area for you to manage orders and change prices.
+## 🆘 Common Errors
+**"git : The term 'git' is not recognized"**
+This means Git isn't installed. Download it from the link above and restart your terminal.
+
+**"Permission denied"**
+Make sure you are logged into GitHub in your browser or use the GitHub Desktop app to help with permissions.
