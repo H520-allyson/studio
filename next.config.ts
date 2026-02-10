@@ -8,6 +8,13 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  experimental: {
+    // Explicitly allow workstation origins to prevent HMR and dev server connectivity issues
+    allowedDevOrigins: [
+      '*.cloudworkstations.dev',
+      'localhost:9002'
+    ],
+  },
   images: {
     unoptimized: true,
     remotePatterns: [
