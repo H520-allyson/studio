@@ -1,48 +1,43 @@
 # Print Genie | AI-Enhanced Printing Shop
 
-This is a Next.js 15 project configured for **Firebase Hosting** with automated **GitHub Actions** deployment.
+Welcome to your new AI-powered printing shop! This project is set up to automatically update your website whenever you "save" your work to GitHub.
 
-## 🚀 How to Host Online (Automated)
+## 🚀 How to Publish Your Website (The "Push" Guide)
 
-This project uses **Continuous Deployment**. You don't need to run manual deployment commands if your GitHub repository is connected.
+Think of GitHub as your master storage in the cloud. "Pushing" is the act of sending your local changes to that cloud storage.
 
-### 1. Push to Main
-Whenever you want to update your live site, simply push your code to the `main` branch:
+### Step 1: Prepare your changes
+In your terminal (the command line at the bottom), tell the computer which files you want to save:
 ```bash
 git add .
-git commit -m "Describe your changes"
+```
+
+### Step 2: Label your save
+Give your "save" a name so you know what you changed:
+```bash
+git commit -m "I updated the homepage"
+```
+
+### Step 3: Push to Main (The Publish Button)
+This sends your work to the `main` (primary) version of your site on GitHub:
+```bash
 git push origin main
 ```
 
-### 2. Monitor Deployment
-- Go to your GitHub repository.
-- Click on the **Actions** tab.
-- You will see a workflow named "Deploy to Firebase Hosting on merge" running.
-- Once it finishes (green checkmark), your site is live!
+---
 
-## 🛠 Manual Build & Export (Optional)
+## 🛠 What happens next?
+1. **GitHub** receives your code.
+2. **GitHub Actions** (the "robots" we set up) start building your website.
+3. **Firebase Hosting** receives the finished build and puts it online.
 
-If you want to test the static build locally:
+You can watch this happen by going to your GitHub website and clicking the **"Actions"** tab at the top. When the yellow circle turns into a green checkmark, your site is live!
 
-### 1. Build the project
-This generates the `out/` directory.
-```bash
-npm run build
-```
-
-### 2. Preview Locally
-You can use a local server to test the static output:
-```bash
-npx serve out
-```
-
-### 3. Manual Firebase Deploy
-```bash
-firebase deploy --only hosting
-```
+## 🔗 Your Website Link
+Your site is hosted for free at:
+**https://studio-2566474323-dc85e.web.app**
 
 ## Key Features
-- **Static Export**: Optimized for Firebase's global CDN with zero-runtime overhead.
-- **AI-Powered**: Uses Genkit for image resolution checks and printing summaries.
-- **Admin Dashboard**: Real-time order management and shop customization.
-- **CI/CD**: Automatic "Preview Channels" for every Pull Request and auto-deploy on merge.
+- **AI Quality Check**: Automatically warns users if their photos are too blurry to print.
+- **Cost Estimator**: Live price calculator based on your shop settings.
+- **Admin Portal**: A private area for you to manage orders and change prices.
