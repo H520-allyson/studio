@@ -1,5 +1,8 @@
 {
   "projects": {
-    "default": "studio-2566474323-dc85e"
-  }
+    "default": "studio-2566474323-dc85e",
+    "KNT": "studio-2566474323-dc85e"
+  },
+  "targets": {},
+  "etags": {}
 }
