@@ -5,8 +5,8 @@ import StatusPageClient from "./StatusPageClient";
  * This function provides example IDs so the build succeeds.
  */
 export async function generateStaticParams() {
-  // In a production app with static export, you might fetch all existing IDs.
-  // For this prototype, we provide sample IDs to ensure the 'out' folder is generated.
+  // In a production app with static export, you might fetch all existing IDs from Firestore here.
+  // For this prototype, we provide sample IDs to ensure the 'out' folder is successfully generated.
   return [
     { orderId: "SAMPLE1" },
     { orderId: "SAMPLE2" }
